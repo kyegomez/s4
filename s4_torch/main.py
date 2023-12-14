@@ -23,6 +23,7 @@ def random_ssm(rng, n):
     c = jax.random.uniform(c_r, (1, n))
     return a, b, c
 
+
 def discretize(a, b, c, step):
     i = np.eye(a.shape[0])
     bl = inv(i - (step / 2.0) * a)
@@ -41,11 +42,12 @@ def scan_ssm(ab, bb, cb, u, x0):
         u (_type_): _description_
         x0 (_type_): _description_
     """
+
     def step(x_k_1, u_k):
         x_k = ab @ x_k_1 + bb @ u_k
         y_k = cb @ x_k
         return x_k, y_k
-    
+
     return jax.lax.scan(step, x0, u)
 
 
@@ -64,16 +66,11 @@ def run_ssm(a, b, c, u):
     l = u.shape[0]
     n = a.shape[0]
     ab, bb, cb = discretize(a, b, c, step=1.0 / l)
-    
+
     # run recurrence
-    return scan_ssm(
-        ab,
-        bb, 
-        cb, 
-        u[:, np.newaxis],
-        np.zeros((n, )))[1]
-    
-    
+    return scan_ssm(ab, bb, cb, u[:, np.newaxis], np.zeros((n,)))[1]
+
+
 def k_conv(ab, bb, cb, l):
     """K conolution
 
@@ -89,7 +86,7 @@ def k_conv(ab, bb, cb, l):
     return np.array(
         [(cb @ matrix_power(ab, l) @ bb).reshape() for i in range(l)]
     )
-    
+
 
 def causal_convolution(u, k, nofft=False):
     """Causal convolution
@@ -122,17 +119,15 @@ def test_cnn_is_rnn(n=4, l=16, rng=None, step=1.0 / 16):
         step (_type_, optional): _description_. Defaults to 1.0/16.
     """
     ssm = random_ssm(rng, n)
-    u = jax.random.uniform(rng, (l, ))
+    u = jax.random.uniform(rng, (l,))
     jax.random.split(rng, 3)
-    
+
     # rnn
     rec = run_ssm(*ssm, u)
-    
-    #cnn
+
+    # cnn
     ssmb = discretize(*ssm, step=step)
     conv = causal_convolution(u, k_conv(*ssmb, l))
-    
+
     # check
     assert np.allclose(rec.ravel(), conv.ravel())
-    
-    
