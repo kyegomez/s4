@@ -131,3 +131,18 @@ def test_cnn_is_rnn(n=4, l=16, rng=None, step=1.0 / 16):
 
     # check
     assert np.allclose(rec.ravel(), conv.ravel())
+
+
+def log_step_initializer(dt_min=0.0001, dt_max=0.1):
+    """Log step initializer
+
+    Args:
+        dt_min (float, optional): _description_. Defaults to 0.0001.
+        dt_max (float, optional): _description_. Defaults to 0.1.
+    """
+    def init(key, shape):
+        return jax.numpy.uniform(key, shape) * (
+            np.log(dt_max) - np.log(dt_min)
+        ) + np.log(dt_min)
+        
+    return init
